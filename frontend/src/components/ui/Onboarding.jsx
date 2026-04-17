@@ -196,25 +196,24 @@ export default function Onboarding({ userId, onComplete }) {
   const Icon = currentQ.icon;
 
   return (
-    <div className="min-h-screen py-12 px-6" style={{ backgroundColor: '#EDE9E6' }}>
-      <div className="max-w-xl mx-auto">
+    <div className="min-h-screen py-12 px-6 fade-up" style={{ backgroundColor: '#F6F3F1' }}>
+      <div className="max-w-2xl mx-auto">
         {/* Progress Indicator */}
         <div className="mb-12">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-xs font-semibold tracking-widest" style={{ color: '#5C4F4A80' }}>
-              STEP {step + 1} OF {QUESTIONS.length}
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#8A8A8A]">
+              Sequence {step + 1} / {QUESTIONS.length}
             </span>
-            <span className="text-xs font-semibold" style={{ color: '#5C766D' }}>
-              {Math.round(((step + 1) / QUESTIONS.length) * 100)}% Complete
+            <span className="text-xs font-bold text-[#F47C65]">
+              {Math.round(((step + 1) / QUESTIONS.length) * 100)}% Synchronized
             </span>
           </div>
-          <div className="h-1.5 bg-[#EDE9E6] rounded-full overflow-hidden">
+          <div className="h-2 bg-white/50 rounded-full overflow-hidden shadow-inner">
             <motion.div
-              className="h-full rounded-full"
-              style={{ background: 'linear-gradient(90deg, #5C766D, #C9996B)' }}
+              className="h-full rounded-full coral-gradient"
               initial={{ width: 0 }}
               animate={{ width: `${((step + 1) / QUESTIONS.length) * 100}%` }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              transition={{ duration: 0.8, ease: "circOut" }}
             />
           </div>
         </div>
@@ -222,70 +221,64 @@ export default function Onboarding({ userId, onComplete }) {
         {/* Main Card */}
         <motion.div
           key={`step-${step}`}
-          initial={{ opacity: 0, y: 30, scale: 0.97 }}
+          initial={{ opacity: 0, y: 40, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -30, scale: 0.97 }}
-          transition={{ duration: 0.5 }}
-          className="rounded-3xl p-10 shadow-2xl"
-          style={{ backgroundColor: '#FFFFFF' }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="neumorphic-card p-10 md:p-14 bg-white/90 relative overflow-hidden"
         >
-          {/* Icon & Question */}
-          <div className="text-center mb-10">
+          {/* Decorative background element */}
+          <div className="absolute top-0 right-0 w-64 h-64 coral-gradient opacity-[0.03] rounded-full -mr-32 -mt-32" />
+
+          <div className="text-center mb-12">
             <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              className="mx-auto mb-6 p-6 rounded-3xl inline-flex items-center justify-center"
-              style={{
-                background: 'linear-gradient(135deg, #5C766D 0%, #5C4F4A 100%)',
-                boxShadow: '0 10px 30px -10px rgba(92, 118, 109, 0.4)'
-              }}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, type: "spring" }}
+              className="mx-auto mb-8 w-20 h-20 rounded-3xl coral-gradient flex items-center justify-center shadow-xl shadow-[#F47C65]/20"
             >
               <Icon className="w-10 h-10 text-white" />
             </motion.div>
 
             <motion.h2
               key={step}
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-2xl md:text-3xl font-bold leading-tight"
-              style={{ color: '#5C4F4A' }}
+              className="text-3xl md:text-4xl font-extrabold text-[#2E2E2E] leading-tight tracking-tight"
             >
               {currentQ.question}
             </motion.h2>
           </div>
 
-          {/* Options */}
-          <div className="space-y-4 mb-12">
+          <div className="space-y-4 mb-14">
             <AnimatePresence mode="popLayout">
               {currentQ.options.map((opt, idx) => {
                 const isSelected = answers[currentQ.id] === opt;
                 return (
                   <motion.button
                     key={`${step}-${idx}`}
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -30 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ delay: idx * 0.08 }}
+                    exit={{ opacity: 0, x: 30 }}
+                    transition={{ delay: idx * 0.1 }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleSelect(opt)}
-                    className={`w-full p-6 rounded-2xl text-left font-medium transition-all flex items-center justify-between border
-                                            ${isSelected
-                        ? 'border-[#C9996B] bg-[#C9996B10]'
-                        : 'border-[#EDE9E6] hover:border-[#C9996B30] hover:bg-[#F8F4F0]'
+                    className={`w-full p-6 rounded-2xl text-left font-bold transition-all flex items-center justify-between border-2
+                      ${isSelected
+                        ? 'border-[#F47C65] bg-white text-[#F47C65] shadow-xl shadow-[#F47C65]/10'
+                        : 'border-transparent bg-[#F6F3F1]/50 text-[#8A8A8A] hover:bg-white hover:border-[#F47C65]/20 hover:text-[#2E2E2E]'
                       }`}
-                    style={{
-                      backgroundColor: isSelected ? '#C9996B10' : '#FFFFFF',
-                    }}
                   >
-                    <span className="text-base" style={{ color: isSelected ? '#5C4F4A' : '#5C4F4A' }}>
-                      {opt}
-                    </span>
+                    <span className="text-lg">{opt}</span>
                     {isSelected && (
-                      <CheckCircle
-                        className="w-6 h-6 flex-shrink-0"
-                        style={{ color: '#5C766D' }}
-                      />
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-8 h-8 rounded-full coral-gradient flex items-center justify-center shadow-lg"
+                      >
+                        <CheckCircle className="w-5 h-5 text-white" />
+                      </motion.div>
                     )}
                   </motion.button>
                 );
@@ -293,44 +286,38 @@ export default function Onboarding({ userId, onComplete }) {
             </AnimatePresence>
           </div>
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center bg-[#F6F3F1]/30 -mx-6 -mb-6 p-6 md:-mx-14 md:-mb-14 md:p-14 border-t border-[#F6F3F1]">
             <button
               onClick={() => setStep(Math.max(0, step - 1))}
               disabled={step === 0}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-medium transition-all
-                                ${step === 0
-                  ? 'opacity-40 cursor-not-allowed'
-                  : 'hover:bg-[#EDE9E6]'
+              className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all
+                ${step === 0
+                  ? 'opacity-0 pointer-events-none'
+                  : 'text-[#8A8A8A] hover:text-[#F47C65] hover:bg-white/50'
                 }`}
-              style={{ color: '#5C4F4A' }}
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
+              <ArrowLeft className="w-5 h-5" />
+              <span>Previous Step</span>
             </button>
 
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleNext}
               disabled={!answers[currentQ.id] || isSaving}
-              className="flex items-center gap-3 px-10 py-4 rounded-2xl font-semibold text-white disabled:opacity-50 transition-all"
-              style={{
-                background: 'linear-gradient(135deg, #C9996B 0%, #5C4F4A 100%)',
-                boxShadow: '0 10px 30px -10px rgba(201, 153, 107, 0.4)',
-              }}
+              className="flex items-center gap-4 px-12 py-5 rounded-2xl font-extrabold text-white coral-gradient shadow-[0_10px_30px_rgba(244,124,101,0.3)] disabled:opacity-50 transition-all group"
             >
               {isSaving ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Saving Profile...</span>
+                  <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Finalizing...</span>
                 </>
               ) : (
                 <>
-                  <span>
-                    {step === QUESTIONS.length - 1 ? 'Complete Setup' : 'Continue'}
+                  <span className="text-lg">
+                    {step === QUESTIONS.length - 1 ? 'Establish Profile' : 'Proceed Diagnostics'}
                   </span>
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
             </motion.button>
@@ -338,16 +325,16 @@ export default function Onboarding({ userId, onComplete }) {
         </motion.div>
 
         {/* Step Indicator Dots */}
-        <div className="flex justify-center gap-2 mt-10">
+        <div className="flex justify-center gap-3 mt-12">
           {QUESTIONS.map((_, idx) => (
-            <div
+            <motion.div
               key={idx}
-              className={`w-2.5 h-2.5 rounded-full transition-all ${idx === step
-                  ? 'bg-[#5C766D] scale-125'
-                  : idx < step
-                    ? 'bg-[#C9996B]'
-                    : 'bg-[#EDE9E6]'
-                }`}
+              initial={false}
+              animate={{
+                width: idx === step ? 32 : 10,
+                backgroundColor: idx === step ? '#F47C65' : (idx < step ? '#FF8A75' : '#D1D1D1')
+              }}
+              className="h-2.5 rounded-full shadow-sm"
             />
           ))}
         </div>
