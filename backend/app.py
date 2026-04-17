@@ -605,40 +605,65 @@ DISEASE_SYMPTOMS = [
 def analyze_symptoms():
     try:
         data = request.json
-        selected_ids = data.get('selected_symptoms', [])
+        # Handle both: plain ID list or list of {id, severity}
+        raw_selections = data.get('selected_symptoms', [])
         user_id = data.get('user_id')
         
+        # Normalize selections to a dict {id: severity}
+        selected_items = {}
+        for item in raw_selections:
+            if isinstance(item, str):
+                selected_items[item] = 'mild'
+            elif isinstance(item, dict) and 'id' in item:
+                selected_items[item['id']] = item.get('severity', 'mild')
+        
+        severity_map = {"mild": 1.0, "moderate": 1.2, "severe": 1.5}
         results = []
         
+        selected_count = len(selected_items)
+        is_low_confidence = selected_count < 2
+        confidence_reason = "Insufficient symptoms selected for a reliable diagnostic pattern." if is_low_confidence else "Based on weighted clinical indicator matching."
+
         for d_info in DISEASE_SYMPTOMS:
             d_key = d_info['id']
+            # Base total weight is normalized to 1.0 severity for all symptoms
             total_weight = sum(s['weight'] for s in d_info['symptoms'])
+            
             matched_weight = 0
+            matched_count = 0
             matched_names = []
             missing_names = []
             
             for s in d_info['symptoms']:
-                if s['id'] in selected_ids:
-                    # In a real app we'd get severity from frontend, here we default to 1.0
-                    matched_weight += s['weight']
+                if s['id'] in selected_items:
+                    severity = selected_items[s['id']]
+                    factor = severity_map.get(severity, 1.0)
+                    
+                    matched_weight += s['weight'] * factor
                     matched_names.append(s['name'])
+                    matched_count += 1
                 else:
-                    if s['weight'] >= 4: # Only list missing "key" symptoms
+                    if s['weight'] >= 4: # Key clinical indicators
                         missing_names.append(s['name'])
             
-            match_percentage = round((matched_weight / total_weight) * 100, 2)
+            # Coverage ratio: matched weighted / total weights (clamped at 100%)
+            match_percentage = min(100, round((matched_weight / total_weight) * 100, 1))
             
             if match_percentage > 0:
                 results.append({
                     "id": d_key,
                     "name": d_info['name'],
                     "probability": match_percentage,
-                    "risk_level": "High" if match_percentage > 70 else "Medium" if match_percentage > 30 else "Low",
+                    "risk_level": "High" if match_percentage > 50 else "Medium" if match_percentage > 20 else "Low",
                     "matched_symptoms": matched_names,
-                    "matched_total_weight": matched_weight,
+                    "matched_total_weight": round(matched_weight, 2),
                     "disease_total_weight": total_weight,
                     "missing_key_symptoms": missing_names,
-                    "summary": f"Matched {len(matched_names)} symptoms with weighted score of {matched_weight} (Target: {total_weight})"
+                    "confidence": {
+                        "is_low": is_low_confidence or (match_percentage < 15 and matched_count < 2),
+                        "reason": confidence_reason
+                    },
+                    "summary": f"Identified {matched_count} of {len(d_info['symptoms'])} indicators. Weighted coverage: {match_percentage}%."
                 })
         
         # Sort by match percentage
@@ -650,14 +675,18 @@ def analyze_symptoms():
                  "user_id": user_id,
                  "type": "symptom_scan",
                  "results": results,
-                 "selected_ids": selected_ids,
+                 "raw_selections": raw_selections,
                  "timestamp": datetime.now(timezone.utc).isoformat()
              })
              
         return jsonify({
             "success": True,
             "results": results,
-            "symptom_library": DISEASE_SYMPTOMS # Send back for UI to display checkboxes
+            "symptom_library": DISEASE_SYMPTOMS,
+            "metadata": {
+                "total_selected": selected_count,
+                "confidence_level": "Low" if is_low_confidence else "Standard"
+            }
         })
         
     except Exception as e:

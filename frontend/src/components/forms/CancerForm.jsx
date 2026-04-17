@@ -131,3 +131,4 @@ export default function CancerForm({ formData, setFormData }) {
     </div>
   );
 }
+

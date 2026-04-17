@@ -34,6 +34,7 @@ const MainPredictor = () => {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [clinicalResult, setClinicalResult] = useState(null);
   const [symptomResult, setSymptomResult] = useState(null);
   
   const userId = localStorage.getItem('user_id');
@@ -43,14 +44,28 @@ const MainPredictor = () => {
     { id: HEART, label: 'Heart Disease', icon: Heart, color: 'text-red-400', glowColor: 'hover:shadow-[0_0_15px_rgba(239,68,68,0.5)]', badge: 'bg-red-500' },
     { id: CANCER, label: 'Cancer Risk', icon: ShieldAlert, color: 'text-purple-400', glowColor: 'neon-glow-purple', badge: 'bg-purple-500' }
   ];
-
   const handlePredict = async () => {
     setLoading(true);
     try {
-      // If we have symptom results, we can potentially pass them for hybrid (per plan)
-      // For now we'll stick to the clinical prediction
       const data = await predictRisk(activeTab, formData, userId);
-      setResult(data);
+      setClinicalResult(data);
+      
+      // Calculate consolidated if symptom data exists for the same disease
+      let finalResult = { ...data };
+      if (symptomResult && symptomResult.some(res => res.id === activeTab)) {
+        const matchingSymptom = symptomResult.find(res => res.id === activeTab);
+        const hybridPercentage = (data.risk_percentage * 0.6) + (matchingSymptom.probability * 0.4);
+        
+        finalResult = {
+          ...data,
+          risk_percentage: Math.round(hybridPercentage),
+          is_hybrid: true,
+          ml_contribution: data.risk_percentage,
+          symptom_contribution: matchingSymptom.probability,
+          symptom_breakdown: matchingSymptom
+        };
+      }
+      setResult(finalResult);
     } catch (error) {
       console.error(error);
       alert("Error: " + error.message);
@@ -59,26 +74,41 @@ const MainPredictor = () => {
     }
   };
 
-  const handleSymptomComplete = (results, selectedIds) => {
-    // Navigate to a results view or stay on common ResultDashboard
-    // For simplicity, we'll map symptom results to the ResultDashboard format if it's the top match
-    if (results.length > 0) {
+  const handleSymptomComplete = (results, selections) => {
+    setSymptomResult(results);
+    
+    // If we've already done clinical, update to hybrid immediately
+    if (clinicalResult && results.some(res => res.id === activeTab)) {
+        const matchingSymptom = results.find(res => res.id === activeTab);
+        const hybridPercentage = (clinicalResult.risk_percentage * 0.6) + (matchingSymptom.probability * 0.4);
+        
+        setResult({
+          ...clinicalResult,
+          risk_percentage: Math.round(hybridPercentage),
+          is_hybrid: true,
+          ml_contribution: clinicalResult.risk_percentage,
+          symptom_contribution: matchingSymptom.probability,
+          symptom_breakdown: matchingSymptom
+        });
+    } else if (results.length > 0) {
+        // Fallback to pure symptom mode if no clinical data yet
         const top = results[0];
         setResult({
             risk_percentage: top.probability,
             risk_level: top.risk_level,
             care_plan: {
                 analysis: top.summary,
-                medical: `Top clinical correlation: ${top.name}. Differentiating factors identified: ${top.missing_key_symptoms.join(", ")}`,
-                diet: "See specific recommendations in progress below.",
+                medical: `Weighted pattern match match for ${top.name}.`,
+                diet: "Dietary optimization recommended based on indicator density.",
                 exercise: "System recommends balanced cardio/resistance.",
                 lifestyle: "Continue regular screening."
             },
             is_symptom_only: true,
-            all_symptom_matches: results
+            all_symptom_matches: results,
+            symptom_breakdown: top
         });
     }
-    setView('clinical'); // Return to main workspace
+    setView('clinical');
   };
 
   const handleLogout = () => {
