@@ -27,8 +27,10 @@ This repository contains our project work, where we apply our skills in:
 ---
 
 ## 🛠️ Technologies Used
-- HTML, CSS
-- Python / C++ (based on project)
+- React
+- Fast Api
+- ML models 
+- Python
 - Git & GitHub
 
 ---
